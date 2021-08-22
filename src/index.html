@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
+    <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self'">
+    <title>Hello World!</title>
+    <link rel="stylesheet" href="index.css">
+  </head>
+  <body>
+    <h1>Hello World!</h1>
+    <form>
+      <label for="portList">choose a port:</label>
+      <select id="portList"></select>
+      <button id="openPort" type="button">Open Port</button>
+
+      </form>
+
+      <canvas id="graph" width="90%" height=80%></canvas>
+    <script src="./renderer.js"></script>
+
+  </body>
+</html>
