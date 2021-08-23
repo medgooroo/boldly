@@ -84,6 +84,12 @@ ipcMain.on("rfExp", (event, command) => {
       rfExplorer.testIPC();
       console.log("dosomething");
       break;
+    case "reboot":
+      rfExplorer.reboot();
+      break;
+    case "getSerial":
+      rfExplorer.getSerial();
+      break;
     default:
       console.log("unimplemented:")
       console.log(command);

@@ -22,6 +22,12 @@ class rfExplorerSerial {
     sPort = new serialPort(port, {
       baudRate: 500000,
     })
+
+    const parser = sPort.pipe(new Readline({ delimiter: '\r\n' }));
+    parser.on('data', this.newData);
+  }
+  newData(event) {
+    console.log(event);
   }
 
   requestConfig() {
@@ -40,20 +46,36 @@ class rfExplorerSerial {
     this.sendData(outString);
   }
 
+   // #<Size>C2-F: <Start_Freq>, <End_Freq>, <Amp_Top>, <Amp_Bottom></Amp_Bottom>
+
   testIPC() {
     console.log("test");
   }
 
-  sendData(aString) {
-    let outString = "#";
-    outString += aString.length + 2; // does this go wrong if the length is longer ?
-    outString += aString;
-    sPort.write(outString, function (err) {
+  reboot() {
+    console.log("rebooting rfexplorer");
+    let outString = "r";
+    this.sendData(outString);
+  }
+  
+  getSerial() {
+    console.log("getting serial");
+    this.analyzerConfig(500000, 555000, -10, -120);
+  }
+
+  sendData( command) {
+    let byteArray = new Uint8Array(command.length + 2);
+    byteArray[0] = 0x23; // #
+    byteArray[1] = command.length + 2;
+    for ( var i = 0; i < command.length; i++) {
+      byteArray[i+2] = command.charCodeAt(i);
+      }
+    sPort.write(byteArray, function (err) {
       if (err) {
         console.log("Write error");
       }
     });
-  }
+    }
 }
 
 module.exports = rfExplorerSerial;

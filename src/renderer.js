@@ -19,6 +19,14 @@ document.getElementById("openPort").addEventListener("click", function () {
     window.api.send("rfExp", ["connect", port]);
 });
 
+document.getElementById("reboot").addEventListener("click", function () {
+  window.api.send("rfExp", ["reboot"]);
+});
+
+document.getElementById("getSerial").addEventListener("click", function () {
+  window.api.send("rfExp", ["getSerial"]);
+});
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 let maxDbm = 0;
