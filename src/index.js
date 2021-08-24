@@ -75,11 +75,11 @@ setTimeout(updatePortList, 2000);
 
 
 function rfDataCallback(explorerData) {
-mainWindow.webContents.send("sweepData", explorerData);
+  mainWindow.webContents.send("sweepData", explorerData);
 }
 
-function configCallBack(explorerConfig) {
-  mainWindow.webContents.send("explorerConfig", explorerConfig);
+function configCallBack(startFreq, freqStep, ampTop, ampBottom, sweepPoints) {
+  mainWindow.webContents.send("explorerConfig", { startFreq, freqStep, ampTop, ampBottom, sweepPoints });
 }
 
 //this.configCallBack(startFreq, freqStep, ampTop, ampBottom);
@@ -91,6 +91,7 @@ ipcMain.on("rfExp", (event, command) => {
     case "connect":
       rfExplorer.connect(command[1]);
       rfExplorer.setReceiveCallback(rfDataCallback)
+      // rfExplorer.set
       break;
     case "reboot":
       rfExplorer.reboot();

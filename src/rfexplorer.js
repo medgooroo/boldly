@@ -27,13 +27,13 @@ class rfExplorerSerial {
   processSweep(dBuffer) {
     switch (dBuffer.readUInt8(1)) {
       case 0x53: // S sweep data
-        console.log("standard sweep data. " + (dBuffer.readUInt8(2) + 1 * 16) + " data points");
+        //   console.log("standard sweep data. " + (dBuffer.readUInt8(2) + 1 * 16) + " data points");
         break;
       case 0x73: // s extended sweep data
-        console.log("extended sweep data. " + (dBuffer.readUInt8(2) + 1 * 16) + " data points");
+        //  console.log("extended sweep data. " + (dBuffer.readUInt8(2) + 1 * 16) + " data points");
         break;
       case 0x7A: // z sweep data Large
-        console.log("large sweep data. " + dBuffer.readUInt16(2) + " data points"); // untested
+        //  console.log("large sweep data. " + dBuffer.readUInt16(2) + " data points"); // untested
         break;
       default:
         console.log("unknown data");
@@ -47,26 +47,27 @@ class rfExplorerSerial {
   }
 
   processConfig(dBuffer) {
-    console.log("config nonsense " + dBuffer.length);
+    //  console.log("config nonsense " + dBuffer.length);
 
     if ((dBuffer.readUInt8(1) == 0x43) && (dBuffer.readUInt8(2) == 0x32) && (dBuffer.readUInt8(3) == 0x2D) && (dBuffer.readUInt8(4) == 0x46)) { // C2-F
       let startFreq = this.stringFromData(dBuffer, 6, 7); // in KHz
-      let freqStep = this.stringFromData(dBuffer, 14, 7); // in Hz
+      let freqStep = this.stringFromData(dBuffer, 14, 7) / 1000; // in Hz
       let ampTop = this.stringFromData(dBuffer, 22, 4);
       let ampBottom = this.stringFromData(dBuffer, 27, 4);
+      let sweepPoints = this.stringFromData(dBuffer, 32, 4);
       console.log("Startfreq: " + startFreq);
       console.log("freqStep: " + freqStep);
       console.log("amp Top: " + ampTop);
       console.log("amp bottomr: " + ampBottom);
 
-      console.log("some kinda config nonsense");
+      //      console.log("some kinda config nonsense");
       // 012345 6->13          14-21       22-26        27-31       32-36               33
       // #C2-F:<Start_Freq>, <Freq_Step>, <Amp_Top>, <Amp_Bottom>, <Sweep_points>, <ExpModuleActive>,
       //        34-37          38-45       46-53      54-61     62-67    68-72          73-77       78-81
       //    <CurrentMode>, <Min_Freq>, <Max_Freq>, <Max_Span>, <RBW>, <AmpOffset>, <CalculatorMode> <EOL></EOL>
       //    6-13 = startFreq
       //   console.log("startFreq: " + startFreq);
-      //this.configCallBack(startFreq, freqStep, ampTop, ampBottom);
+      this.configCallBack(startFreq, freqStep, ampTop, ampBottom, sweepPoints);
     }
   }
 
@@ -76,7 +77,7 @@ class rfExplorerSerial {
     for (let i = offset; i < offset + length; i++) {
       aString = aString + String.fromCharCode(buff.readUInt8(i));
     }
-    return aString;
+    return parseInt(aString, 10);
   }
 
   processNewData(data) {
