@@ -9,6 +9,10 @@ window.api.receive("portList", (data) => { //
     })
 });
 
+window.api.receive("sweepData", (sweep) => {
+  data = sweep;
+})
+
 console.log("doing something")
 window.api.send("rfExp", ["dosomething"]);
 
@@ -65,6 +69,7 @@ window.requestAnimationFrame(drawData);
 
 function drawData() {
   ctx.clearRect(0, 0, graphWidth, graphHeight);
+  ctx.beginPath();
   ctx.font = '48px serif';
   ctx.textAlign = "right";
   currFreq = (mouseX / (graphWidth / (freqUpper - freqLower))) + freqLower;

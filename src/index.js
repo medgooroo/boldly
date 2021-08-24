@@ -74,12 +74,17 @@ function updatePortList() {
 setTimeout(updatePortList, 2000);
 
 
+function rfDataCallback(explorerData) {
+mainWindow.webContents.send("sweepData", explorerData);
 
+}
 
 ipcMain.on("rfExp", (event, command) => {
   switch (command[0]) {
     case "connect":
       rfExplorer.connect(command[1]);
+      rfExplorer.setReceiveCallback(rfDataCallback)
+
     case "dosomething":
       rfExplorer.testIPC();
       console.log("dosomething");
