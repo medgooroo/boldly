@@ -76,24 +76,30 @@ setTimeout(updatePortList, 2000);
 
 function rfDataCallback(explorerData) {
 mainWindow.webContents.send("sweepData", explorerData);
-
 }
+
+function configCallBack(explorerConfig) {
+  mainWindow.webContents.send("explorerConfig", explorerConfig);
+}
+
+//this.configCallBack(startFreq, freqStep, ampTop, ampBottom);
+
+
 
 ipcMain.on("rfExp", (event, command) => {
   switch (command[0]) {
     case "connect":
       rfExplorer.connect(command[1]);
       rfExplorer.setReceiveCallback(rfDataCallback)
-
-    case "dosomething":
-      rfExplorer.testIPC();
-      console.log("dosomething");
       break;
     case "reboot":
       rfExplorer.reboot();
       break;
     case "getSerial":
       rfExplorer.getSerial();
+      break;
+    case "getConfig":
+      rfExplorer.requestConfig(configCallBack);
       break;
     default:
       console.log("unimplemented:")

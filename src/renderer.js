@@ -31,6 +31,10 @@ document.getElementById("getSerial").addEventListener("click", function () {
   window.api.send("rfExp", ["getSerial"]);
 });
 
+document.getElementById("getConfig").addEventListener("click", function () {
+  window.api.send("rfExp", ["getConfig"]);
+});
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 let maxDbm = 0;
