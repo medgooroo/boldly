@@ -15,6 +15,7 @@ const createWindow = () => {
   mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
+    useContentSize: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     }
@@ -102,6 +103,8 @@ ipcMain.on("rfExp", (event, command) => {
     case "getConfig":
       rfExplorer.requestConfig(configCallBack);
       break;
+    case "changeConfig":
+      rfExplorer.analyzerConfig(command[1], command[2], 0, -110); // unsure about level settings
     default:
       console.log("unimplemented:")
       console.log(command);
