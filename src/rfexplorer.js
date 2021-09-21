@@ -55,10 +55,10 @@ class rfExplorerSerial {
       let ampTop = this.stringFromData(dBuffer, 22, 4);
       let ampBottom = this.stringFromData(dBuffer, 27, 4);
       let sweepPoints = this.stringFromData(dBuffer, 32, 4);
-      console.log("Startfreq: " + startFreq);
-      console.log("freqStep: " + freqStep);
-      console.log("amp Top: " + ampTop);
-      console.log("amp bottomr: " + ampBottom);
+      // console.log("Startfreq: " + startFreq);
+      // console.log("freqStep: " + freqStep);
+      // console.log("amp Top: " + ampTop);
+      // console.log("amp bottomr: " + ampBottom);
 
       //      console.log("some kinda config nonsense");
       // 012345 6->13          14-21       22-26        27-31       32-36               33
@@ -72,7 +72,7 @@ class rfExplorerSerial {
   }
 
   stringFromData(buff, offset, length) {
-    console.log("buff length: " + buff.length);
+    //console.log("buff length: " + buff.length);
     let aString = '';
     for (let i = offset; i < offset + length; i++) {
       aString = aString + String.fromCharCode(buff.readUInt8(i));
