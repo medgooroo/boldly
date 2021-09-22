@@ -1,4 +1,5 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const fs = require('fs');
 const path = require('path');
 const rfExplorerSerial = require('./rfexplorer.js');
 
@@ -85,7 +86,36 @@ function configCallBack(startFreq, freqStep, ampTop, ampBottom, sweepPoints) {
 
 //this.configCallBack(startFreq, freqStep, ampTop, ampBottom);
 
+let options = {
+  title: "Save as...",
+  defaultPath: "scan.csv",   // change to date and stuff
+  buttonLabel: "Export",
 
+  filters: [
+    { name: 'CSV', extensions: ['csv'] },
+  ]
+}
+
+
+ipcMain.on("ui", (event, command) => {
+  switch (command[0]) {
+    case "saveOutput":
+      dialog.showSaveDialog(null, options).then(({ filePath }) => {
+        let fileData = '';
+        let bands = command[1];
+        for (let i = 0; i < bands.length; i++) {
+          for (let j = 0; j < bands[i].binFreq.length; j++) {
+            let freqInMHz = bands[i].binFreq[j] / 1000;
+            let dbmOut = bands[i].peakValues[j];
+
+            fileData += Number.parseFloat(freqInMHz).toFixed(3) + "\t" + Number.parseFloat(dbmOut).toFixed(2) + "\r\n";
+          }
+        }
+        fs.writeFileSync(filePath, fileData, 'utf-8');
+      });
+      break;
+  }
+})
 
 ipcMain.on("rfExp", (event, command) => {
   switch (command[0]) {
@@ -107,6 +137,6 @@ ipcMain.on("rfExp", (event, command) => {
       rfExplorer.analyzerConfig(command[1], command[2], 0, -110); // unsure about level settings
     default:
       console.log("unimplemented:")
-      console.log(command);
+      //console.log(command);
   }
 });

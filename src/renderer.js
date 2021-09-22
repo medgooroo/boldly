@@ -14,7 +14,6 @@ window.api.receive("sweepData", (sweep) => {
   processData();
 })
 
-
 let resolution = 0.125; // from ui // presumably like 12.5kHz
 let explorerBins = 10; // number of bins recieved form explorer
 
@@ -31,12 +30,8 @@ window.api.receive("explorerConfig", (config) => {
   minDbm = config.ampBottom;
   resolution = config.freqStep;
   explorerBins = config.sweepPoints;
-  console.log("explorerBins: " + explorerBins)
+ // console.log("explorerBins: " + explorerBins)
 })
-
-
-window.api.send("rfExp", ["dosomething"]);
-
 
 document.getElementById("openPort").addEventListener("click", function () {
   let e = document.getElementById("portList");
@@ -54,23 +49,9 @@ document.getElementById("apply").addEventListener("click", function () {
 });
 
 document.getElementById("dump").addEventListener("click", function () {
-  dumpPeaks();
+  //dumpPeaks();
+  window.api.send("ui", ["saveOutput", narrowBand]);
 });
-
-
-// document.getElementById("reboot").addEventListener("click", function () {
-//   window.api.send("rfExp", ["reboot"]);
-// });
-
-// document.getElementById("getSerial").addEventListener("click", function () {
-//   window.api.send("rfExp", ["getSerial"]);
-// });
-
-// document.getElementById("getConfig").addEventListener("click", function () {
-//   window.api.send("rfExp", ["getConfig"]);
-// });
-
-
 
 let narrowBand = [];
 let broadband = {
@@ -81,15 +62,11 @@ let broadband = {
 }
 let data = [];
 
-
 function processData() {
-  // console.log("currFreqUpper: " + currFreqUpper);
-  // console.log("currFreqLower: " + currFreqLower);
-  // console.log("broadband upper: " + broadband.upperFreq);
-  // console.log("broadband lower: " + broadband.lowerFreq);
   let testRange = ( parseFloat(broadband.upperFreq) - parseFloat(broadband.lowerFreq) ) / 2; ; // doesn't tune to exactly the right freqs - we need a range to test in.
   if ((currFreqUpper >= (broadband.upperFreq - testRange))  && (currFreqLower == broadband.lowerFreq)) {
     for (let i = 0; i < explorerBins; i++) { // bins is curr
+      broadband.peakValues[i] -= 0.1; // degrade so we can get new peaks
       if (data[i] >= broadband.peakValues[i]) {
         broadband.peakValues[i] = data[i]; // update broadband peaks
         narrowBand[broadband.narrowBandIndex[i]].needsUpdate = true;
@@ -103,7 +80,7 @@ function processData() {
     }
     let testRange = ( narrowBand[i].upperFreq - narrowBand[i].lowerFreq);
     if ((currFreqLower == narrowBand[i].lowerFreq) && ((currFreqUpper >= narrowBand[i].upperFreq) && (currFreqUpper < (narrowBand[i].upperFreq + narrowBand[i].upperFreq - narrowBand[i].lowerFreq)))) { // we're in this narrowband
-      console.log("narrowband");
+      //console.log("narrowband");
       for (var n = 0; n < data.length; n++) {
         if (narrowBand[i].peakValues[n] <= data[n]) narrowBand[i].peakValues[n] = data[n]; // update peaks
       }
@@ -137,7 +114,6 @@ function draw() {
   setTimeout(() => {
     requestAnimationFrame(draw);
   }, 1000 / fps)
-
 }
 
 function setupBands() {
@@ -175,23 +151,21 @@ function setupBands() {
         broadband.narrowBandIndex[n] = m;
       }
     }
-    console.log("narrowBands: " + narrowBand.length);
+   // console.log("narrowBands: " + narrowBand.length);
   }
 
-  console.log(broadband);
-  console.log(narrowBand);
+  //console.log(broadband);
+  //console.log(narrowBand);
 }
 
-
 let mouseX = 0;
-
 document.getElementById("analyser").addEventListener('mousemove', event => {
   let bound = document.getElementById("analyser").getBoundingClientRect();
   mouseX = event.clientX - bound.left - document.getElementById("analyser").clientLeft;
 });
 
 function drawAnalyser() {
-  console.log("narrowbands: " + narrowBand.length);
+  //console.log("narrowbands: " + narrowBand.length);
   var c = document.getElementById("analyser");
   var ctx = document.getElementById("analyser").getContext("2d");
 
@@ -267,15 +241,13 @@ function drawPeaks() {
   }
 }
 
-
 function dumpPeaks() {
   for (let i = 0; i < narrowBand.length; i++) {
     for (let j = 0; j < narrowBand[i].peakValues.length; j++) {
-            console.log(narrowBand[i].binFreq[j] + " : " + narrowBand[i].peakValues[j]);
+     //       console.log(narrowBand[i].binFreq[j] + " : " + narrowBand[i].peakValues[j]);
     }
   }
 }
-
 
 function heatMapColorforValue(value) {
   value = value / -(maxDbm - minDbm);
