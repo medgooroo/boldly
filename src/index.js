@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const fs = require('fs');
 const path = require('path');
-const rfExplorerSerial = require('./rfexplorer.js');
+// const rfExplorerSerial = require('./rfexplorer.js');
 
 let mainWindow = null;
 
@@ -54,8 +54,7 @@ app.on('activate', () => {
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
 
-
-// HERE
+// Hmmmmm http://j3.rf-explorer.com/articles-faq/42-rfe/faq/71-accuracy-precision-and-resolution
 
 
 const rfExp = require("./rfexplorer.js");
@@ -136,7 +135,7 @@ ipcMain.on("rfExp", (event, command) => {
     case "changeConfig":
       rfExplorer.analyzerConfig(command[1], command[2], 0, -110); // unsure about level settings
     default:
-      console.log("unimplemented:")
+    //  console.log("unimplemented:")
       //console.log(command);
   }
 });

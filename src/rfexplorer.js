@@ -39,7 +39,7 @@ class rfExplorerSerial {
         console.log("unknown data");
     }
     let dbmValues = new Array(dBuffer.length);
-    for (var i = 3; i < dBuffer.length; i++) { // skip descriptor
+    for (let i = 3; i < dBuffer.length; i++) { // skip descriptor
       dbmValues[i - 3] = dBuffer.readUInt8(i) / -2;
     }
     // console.log(dbmValues);
@@ -47,20 +47,13 @@ class rfExplorerSerial {
   }
 
   processConfig(dBuffer) {
-    //  console.log("config nonsense " + dBuffer.length);
-
     if ((dBuffer.readUInt8(1) == 0x43) && (dBuffer.readUInt8(2) == 0x32) && (dBuffer.readUInt8(3) == 0x2D) && (dBuffer.readUInt8(4) == 0x46)) { // C2-F
       let startFreq = this.stringFromData(dBuffer, 6, 7); // in KHz
-      let freqStep = this.stringFromData(dBuffer, 14, 7) / 1000; // in Hz
+      let freqStep = this.stringFromData(dBuffer, 14, 7) / 1000;// in KHz
       let ampTop = this.stringFromData(dBuffer, 22, 4);
       let ampBottom = this.stringFromData(dBuffer, 27, 4);
       let sweepPoints = this.stringFromData(dBuffer, 32, 4);
-      // console.log("Startfreq: " + startFreq);
-      // console.log("freqStep: " + freqStep);
-      // console.log("amp Top: " + ampTop);
-      // console.log("amp bottomr: " + ampBottom);
 
-      //      console.log("some kinda config nonsense");
       // 012345 6->13          14-21       22-26        27-31       32-36               33
       // #C2-F:<Start_Freq>, <Freq_Step>, <Amp_Top>, <Amp_Bottom>, <Sweep_points>, <ExpModuleActive>,
       //        34-37          38-45       46-53      54-61     62-67    68-72          73-77       78-81
@@ -128,7 +121,7 @@ class rfExplorerSerial {
     let byteArray = new Uint8Array(command.length + 2);
     byteArray[0] = 0x23; // #
     byteArray[1] = command.length + 2;
-    for (var i = 0; i < command.length; i++) {
+    for (let i = 0; i < command.length; i++) {
       byteArray[i + 2] = command.charCodeAt(i);
     }
     sPort.write(byteArray, function (err) {

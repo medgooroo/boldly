@@ -1,49 +1,27 @@
+
 window.api.receive("portList", (pList) => { // 
   let x = document.getElementById("portList");
   x.length = 0;
   pList.forEach(function (pList) {
     //    for (let [key, value] of data.entries()) {
-    var option = document.createElement("option");
+    let option = document.createElement("option");
     option.text = pList.path
     x.add(option);
   })
 });
 
-window.api.receive("sweepData", (sweep) => {
-  data = sweep;
-  processData();
-})
-
-let resolution = 0.125; // from ui // presumably like 12.5kHz
-let explorerBins = 10; // number of bins recieved form explorer
-
-let currFreqUpper = 0;
-let currFreqLower = 0;
-
-let minDbm = -110;
-let maxDbm = 10;
-
-window.api.receive("explorerConfig", (config) => {
-  currFreqLower = config.startFreq;
-  currFreqUpper = currFreqLower + (config.freqStep * config.sweepPoints);
-  //maxDbm = config.ampTop;
-  minDbm = config.ampBottom;
-  resolution = config.freqStep;
-  explorerBins = config.sweepPoints;
- // console.log("explorerBins: " + explorerBins)
-})
-
 document.getElementById("openPort").addEventListener("click", function () {
   let e = document.getElementById("portList");
   let port = e.options[e.selectedIndex].text;
   window.api.send("rfExp", ["connect", port]);
+  window.api.send("rfExp", ["getConfig"]);
 });
 
 document.getElementById("apply").addEventListener("click", function () {
   window.api.send("rfExp", ["getConfig"]);
-  broadband.lowerFreq = document.getElementById("startFreq").value * 1000;
-  broadband.upperFreq = document.getElementById("endFreq").value * 1000;
-  resolution = document.getElementById("resolution").value;
+  broadband.startFreq = document.getElementById("startFreq").value * 1000;
+  broadband.endFreq = document.getElementById("endFreq").value * 1000;
+  broadband.resolution = document.getElementById("resolution").value;
 
   setupBands();
 });
@@ -53,204 +31,100 @@ document.getElementById("dump").addEventListener("click", function () {
   window.api.send("ui", ["saveOutput", narrowBand]);
 });
 
-let narrowBand = [];
+window.api.receive("sweepData", (sweep) => {
+  data = sweep;  // shouldnt be like this? - used to draw the current sweep
+  processData(sweep);
+})
+
+
+window.api.receive("explorerConfig", (config) => {
+  explorerConfig = config;
+  explorerConfig.endFreq = explorerConfig.startFreq + (explorerConfig.freqStep * explorerConfig.sweepPoints);
+})
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
 let broadband = {
-  "lowerFreq": 6,
-  "upperFreq": 63,
-  "peakValues": [],
-  "narrowBandIndex": [], // same size as peak values, hold index for appropriate narrowband?
+  "startFreq": 0,
+  "endFreq": 0,
+  "ampTop": 0,
+  "ampBottom": 0,
+  "sweepPoints": 0,
+  "resolution": 0
 }
-let data = [];
+let explorerConfig; // 
+let narrowbandFreqStep; // width for narrows
+let widebandFreqStep; // width for wide
 
-function processData() {
-  let testRange = ( parseFloat(broadband.upperFreq) - parseFloat(broadband.lowerFreq) ) / 2; ; // doesn't tune to exactly the right freqs - we need a range to test in.
-  if ((currFreqUpper >= (broadband.upperFreq - testRange))  && (currFreqLower == broadband.lowerFreq)) {
-    for (let i = 0; i < explorerBins; i++) { // bins is curr
-      broadband.peakValues[i] -= 0.1; // degrade so we can get new peaks
-      if (data[i] >= broadband.peakValues[i]) {
-        broadband.peakValues[i] = data[i]; // update broadband peaks
-        narrowBand[broadband.narrowBandIndex[i]].needsUpdate = true;
-      }
+let narrowBands = []; // collection of band configs
+
+// set config.
+// wait for new explorerConfig
+// process new sweep data - do we care if it fits our band setup? 
+// the only thing we care about is resolution - we're either narrow or not.
+
+function setupBands() {
+  setExplorerConfig(broadband.startFreq, broadband.endFreq);
+  // hmmmmm do we need to wait for config to get back?
+  let numBands = (broadband.endFreq - broadband.startFreq) / broadband.resolution;
+  for (let i = 0; i < numBands; i++) {
+    let lFreq = broadband.startFreq + (i * numBands);
+    let uFreq = broadband.startFreq + ((i + 1) * numBands);
+    let aBand = {
+      "startFreq": Number.parseFloat(lFreq.toFixed(3)),
+      "endFreq": Number.parseFloat(uFreq.toFixed(3)),
+      "peakValues": []
     }
+    for (let j = 0; j < broadband.sweepPoints; j++) {
+      aBand.peakValues[j] = broadband.ampBottom;
+    }
+    narrowBands.push(aBand);
+  }
+}
+
+function processData(data) {
+  // from explorerconfig
+  let freq = [];
+  let mag = [];
+  let i = 0;
+  for (var band = explorerConfig.startFreq; band < explorerConfig.endFreq; band += explorerConfig.freqStep) {
+    freq[i] = band * 1000;
+    mag[i] = data[i];
+    i++;
   }
 
-  for (var i = 0; i < narrowBand.length; i++) { // I guess this updates the highest freq first
-    if (narrowBand[i].needsUpdate) {
-      setExplorerConfig(narrowBand[i].lowerFreq, narrowBand[i].upperFreq);
+  Plotly.animate('plot', {
+    data: [{ x: freq, y: mag }]
+  }, {
+    transition: {
+      duration: 0
+    },
+    frame: {
+      duration: 0
     }
-    let testRange = ( narrowBand[i].upperFreq - narrowBand[i].lowerFreq);
-    if ((currFreqLower == narrowBand[i].lowerFreq) && ((currFreqUpper >= narrowBand[i].upperFreq) && (currFreqUpper < (narrowBand[i].upperFreq + narrowBand[i].upperFreq - narrowBand[i].lowerFreq)))) { // we're in this narrowband
-      //console.log("narrowband");
-      for (var n = 0; n < data.length; n++) {
-        if (narrowBand[i].peakValues[n] <= data[n]) narrowBand[i].peakValues[n] = data[n]; // update peaks
-      }
-      narrowBand[i].needsUpdate = false; // updated, remove flag
-      setExplorerConfig(broadband.lowerFreq, broadband.upperFreq); // back to broadband
-    }
-  }
+  });
+
+
 }
 
 function setExplorerConfig(startFreq, endFreq) {
   window.api.send("rfExp", ["changeConfig", startFreq, endFreq]);
 }
 
-var c = document.getElementById("analyser");
-var ctx = document.getElementById("analyser").getContext("2d");
-ctx.canvas.width = 800;
-ctx.canvas.height = 400;
 
-c.addEventListener('mousemove', event => {
-  let bound = c.getBoundingClientRect();
-  mouseX = event.clientX - bound.left - c.clientLeft;
+thePlot = document.getElementById('plot');
+Plotly.newPlot(thePlot, [{
+  x: [606000000, 642000000],
+  y: [-120,-120]
+}], {
+  margin: {
+    t: 0
+  },
+  xaxis: {
+    range: [606000000, 642000000]
+  },
+  yaxis: {
+    range: [-110, 0]
+  }
 });
 
-window.requestAnimationFrame(draw);
-
-function draw() {
-  drawAnalyser();
-  drawPeaks();
-  //drawSpectro();
-  let fps = 60;
-  setTimeout(() => {
-    requestAnimationFrame(draw);
-  }, 1000 / fps)
-}
-
-function setupBands() {
-  // set up narrowBands
-  let range = broadband.upperFreq - broadband.lowerFreq;
-  let totalBins = Math.ceil(range / resolution);
-  let numBands = totalBins / explorerBins;
-  let binBandwidth = range / totalBins;
-  narrowBand = [];
-  for (var i = 0; i < broadband.peakValues.length; i++) broadband.peakValues[i] = minDbm;
-  setExplorerConfig(broadband.lowerFreq, broadband.upperFreq);
-
-  for (var i = 0; i < numBands; i++) {
-    let lowerFreq = broadband.lowerFreq + (i * explorerBins * binBandwidth);
-    let upperFreq = broadband.lowerFreq + ((i + 1) * explorerBins * binBandwidth); // ^^
-    let aBand = {
-      "lowerFreq": Number.parseFloat(lowerFreq.toFixed(3)), //
-      "upperFreq": Number.parseFloat(upperFreq.toFixed(3)),
-      "peakValues": [],
-      "binFreq": [], // yeah we could totally calculate this each time but meh.
-      "needsUpdate": false
-    }
-    narrowBand.push(aBand);
-    for (var n = 0; n < explorerBins; n++) {
-      narrowBand[i].peakValues[n] = minDbm;
-      narrowBand[i].binFreq[n] = (((upperFreq - lowerFreq) / explorerBins) * n) + lowerFreq;
-    }
-  }
-  // set up broadband
-  let broadbandBinWidth = (broadband.upperFreq - broadband.lowerFreq) / explorerBins;
-  for (var n = 0; n < explorerBins; n++) {
-    broadband.peakValues[n] = minDbm;
-    for (var m = 0; m < narrowBand.length; m++) {
-      if (((n * broadbandBinWidth) + broadband.lowerFreq) >= narrowBand[m].lowerFreq) { // sets index to match appropriate narrowband
-        broadband.narrowBandIndex[n] = m;
-      }
-    }
-   // console.log("narrowBands: " + narrowBand.length);
-  }
-
-  //console.log(broadband);
-  //console.log(narrowBand);
-}
-
-let mouseX = 0;
-document.getElementById("analyser").addEventListener('mousemove', event => {
-  let bound = document.getElementById("analyser").getBoundingClientRect();
-  mouseX = event.clientX - bound.left - document.getElementById("analyser").clientLeft;
-});
-
-function drawAnalyser() {
-  //console.log("narrowbands: " + narrowBand.length);
-  var c = document.getElementById("analyser");
-  var ctx = document.getElementById("analyser").getContext("2d");
-
-  let graphHeight = c.height;
-  let graphWidth = c.width;
-
-  ctx.clearRect(0, 0, graphWidth, graphHeight);
-  ctx.fillStyle = "#000000";
-  ctx.fillRect(0, 0, graphWidth, graphHeight);
-
-  let vertScale = graphHeight / (maxDbm - minDbm) * -1; // coords are from top 
-  // let horizScale = graphWidth / ((freqUpper - freqLower) / freqResolution);
-  let totalBins = explorerBins * narrowBand.length;
-
-  ctx.font = '48px serif';
-  ctx.textAlign = "right";
-  let currMouseFreq = (mouseX / (graphWidth / (broadband.upperFreq - broadband.lowerFreq))) + broadband.lowerFreq;
-  let freqText = (currMouseFreq / 1000).toFixed(3) + "MHz";
-  ctx.fillStyle = ("#FFFFFF");
-  ctx.fillText(freqText, graphWidth, 48);
-  ctx.fillRect(mouseX, 0, 2, graphHeight);
-
-  // this should all be just draw this data between these freqs.
-  //console.log("drawing: " + currFreqLower + "  " + currFreqUpper);
-  let currRange = currFreqUpper - currFreqLower;
-  let broadbandRange = broadband.upperFreq - broadband.lowerFreq;
-  let bandScale = currRange / broadbandRange;
-  let bandOffset = currFreqLower - broadband.lowerFreq;
-  let horizOffset = bandOffset / (broadbandRange) * graphWidth;
-
-  // console.log("bandScale: " + bandScale)
-  let horizScale = graphWidth / explorerBins * bandScale;
-  for (let i = 0; i < data.length; i++) {
-    ctx.beginPath();
-    //ctx.moveTo((i - 1) * horizScale, data[i - 1] * vertScale);
-    ctx.lineWidth = graphWidth / data.length;
-    ctx.strokeStyle = heatMapColorforValue(data[i]);
-    ctx.moveTo((i * horizScale) + horizOffset, graphHeight);
-    ctx.lineTo((i * horizScale) + horizOffset, data[i] * vertScale);
-    ctx.stroke();
-  }
-}
-
-
-
-function drawPeaks() {
-  var c = document.getElementById("analyser");
-  var ctx = document.getElementById("analyser").getContext("2d");
-
-  let graphHeight = c.height;
-  let graphWidth = c.width;
-
-  let vertScale = graphHeight / (maxDbm - minDbm) * -1; // coords are from top 
-  // let horizScale = graphWidth / ((freqUpper - freqLower) / freqResolution);
-  let totalBins = explorerBins * narrowBand.length;
-
-  // this should all be just draw this data between these freqs.
-
-  let horizScale = graphWidth / totalBins;
-  // if (narrowBand.length > 0 )
-  //   console.log("band Length: " + narrowBand[0].peakValues.length);
-
-  for (let i = 0; i < narrowBand.length; i++) {
-    for (let j = 1; j < narrowBand[i].peakValues.length; j++) {
-      ctx.beginPath();
-      //ctx.moveTo((i - 1) * horizScale, data[i - 1] * vertScale);
-      ctx.lineWidth = 5;
-      ctx.strokeStyle = 'red';
-      ctx.moveTo(((i * explorerBins + j) * horizScale), narrowBand[i].peakValues[j - 1] * vertScale);
-      ctx.lineTo(((i * explorerBins + j) * horizScale), narrowBand[i].peakValues[j] * vertScale);
-      ctx.stroke();
-    }
-  }
-}
-
-function dumpPeaks() {
-  for (let i = 0; i < narrowBand.length; i++) {
-    for (let j = 0; j < narrowBand[i].peakValues.length; j++) {
-     //       console.log(narrowBand[i].binFreq[j] + " : " + narrowBand[i].peakValues[j]);
-    }
-  }
-}
-
-function heatMapColorforValue(value) {
-  value = value / -(maxDbm - minDbm);
-  var h = (value) * 240
-  return "hsl(" + h + ", 100%, 50%)";
-}
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////actual rendering things

@@ -3,22 +3,18 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
   <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self'">
   <title>boldly</title>
   <link rel="stylesheet" href="index.css">
+  <script src="plotly-2.6.3.min.js"></script>
 </head>
 
 <body>
-  <h1>...</h1>
-
-
-
 
 <div class="row">
   <div class="column analyser">
-    <canvas id="analyser"></canvas>
-  </div>
+    <div id="plot"></div>
+    </div>
   <div class="column interface">
     <form>
       <label for="portList">choose port:</label>
@@ -29,7 +25,7 @@
       <label for="endFreq">End freq (MHz):</label>
       <input type="text" id="endFreq" name="endFreq" value="648">
       <label for="resolution">Resolution (kHz):</label>
-      <input type="text" id="resolution" name="resolution" value="12.5">
+      <input type="text" id="resolution" name="resolution" value="25">
       <button id="apply" type="button">Apply</button><br>
       <button id="dump" type="button">dump Output</button><br>
 
