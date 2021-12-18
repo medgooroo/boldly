@@ -10,7 +10,6 @@ class rfExplorerSerial {
 
   listPorts(callback) {
     serialPort.list().then(function (ports) {
-      // console.log(ports[0]);
       callback(ports);
     });
   }
@@ -42,7 +41,6 @@ class rfExplorerSerial {
     for (let i = 3; i < dBuffer.length; i++) { // skip descriptor
       dbmValues[i - 3] = dBuffer.readUInt8(i) / -2;
     }
-    // console.log(dbmValues);
     this.sweepCallback(dbmValues);
   }
 

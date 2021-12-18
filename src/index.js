@@ -67,12 +67,13 @@ let rfExplorer = new rfExp();
 function sendUpdatedPortList(data) {
   mainWindow.webContents.send("portList", data);
 }
+
 function updatePortList() {
   rfExplorer.listPorts(sendUpdatedPortList);
-  setTimeout(updatePortList, 2000);
+  // setTimeout(updatePortList, 2000); 
 }
 
-setTimeout(updatePortList, 2000);
+setTimeout(updatePortList, 1000);
 
 
 function rfDataCallback(explorerData) {
